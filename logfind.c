@@ -5,6 +5,15 @@
 #include "dbg.h"
 
 #include <ctype.h>
+
+#include <sys/types.h>
+
+#include <sys/stat.h>
+
+#include <err.h>
+#include <fts.h>
+#include <stdio.h>
+
 #include <string.h>
 
 /*=============================================================================
@@ -51,19 +60,8 @@
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
-
-/*printf(ANSI_COLOR_RED     "This text is RED!"     ANSI_COLOR_RESET "\n");*/
-/*printf(ANSI_COLOR_GREEN   "This text is GREEN!"   ANSI_COLOR_RESET "\n");*/
-/*printf(ANSI_COLOR_YELLOW  "This text is YELLOW!"  ANSI_COLOR_RESET "\n");*/
-/*printf(ANSI_COLOR_BLUE    "This text is BLUE!"    ANSI_COLOR_RESET "\n");*/
-/*printf(ANSI_COLOR_MAGENTA "This text is MAGENTA!" ANSI_COLOR_RESET "\n");*/
-/*printf(ANSI_COLOR_CYAN    "This text is CYAN!"    ANSI_COLOR_RESET "\n");*/
-
 
 // Description
 //
@@ -73,106 +71,111 @@ void logfind(char *filename, FILE *input, char *word);
 
 
 void removeSubstr (char *filename, int line, char *string, char *sub, int level) {
-    char *match;
-    int len_sub = strlen(sub);
-    int len_string = strlen(string);
+	char *match;
+	int len_sub = strlen(sub);
+	int len_string = strlen(string);
 
 
-    match = strstr(string, sub);
-    if (match && level == 0) {
+	match = strstr(string, sub);
+	if (match && level == 0) {
 
-            printf(ANSI_COLOR_CYAN    "%s"    ANSI_COLOR_RESET, filename);
-            printf(ANSI_COLOR_GREEN ":%d:" ANSI_COLOR_RESET, line);
-        }
-    if (!match) {
-        if (level == 0) {
-            return;
-        } else {
-            printf(string);
-            return;
-        }
-    }
+			printf(ANSI_COLOR_CYAN    "%s"    ANSI_COLOR_RESET, filename);
+			printf(ANSI_COLOR_GREEN ":%d:" ANSI_COLOR_RESET, line);
+		}
+	if (!match) {
+		if (level == 0) {
+			return;
+		} else {
+			printf(string);
+			return;
+		}
+	}
 
-    int len_match = strlen(match); 
-    int match_start = len_string - len_match;
+	int len_match = strlen(match); 
+	int match_start = len_string - len_match;
 
-    for (int i = 0; i < match_start; i++) {
-        printf("%c", string[i]);
-    }
+	for (int i = 0; i < match_start; i++) {
+		printf("%c", string[i]);
+	}
 
-    printf(ANSI_COLOR_RED     "%s"     ANSI_COLOR_RESET, sub);
+	printf(ANSI_COLOR_RED     "%s"     ANSI_COLOR_RESET, sub);
 
-    int new_start = len_string - len_match + len_sub;
+	int new_start = len_string - len_match + len_sub;
 
-    // -1 for removing the newline char
-    if (new_start != len_string -1 ) {
-        char *new_string = string + new_start;
-        removeSubstr(filename, line, new_string, sub, ++level);
-    } else {
-        printf("\n");
-        return;
-    }
+	// -1 for removing the newline char
+	if (new_start != len_string -1 ) {
+		char *new_string = string + new_start;
+		removeSubstr(filename, line, new_string, sub, ++level);
+	} else {
+		printf("\n");
+		return;
+	}
 
 }
 
 
-int main(int argc, char *argv[]) {
+static int ptree(char * const argv[], char * word);
 
-   DIR *dp;
-   struct dirent *ep;
-   dp = opendir ("./");
-   char *word = argv[1];
 
-   if (dp != NULL)
-   {
-     while (ep = readdir (dp)) {
-       /*puts (ep->d_name);*/
+int main(int argc, char * const argv[])
+{
+    char *word = argv[1];
 
-        char *filename = ep->d_name;
-        FILE *input = fopen(filename, "r");
+	int rc;
 
-        char line[MAX_LINE_SIZE];
-
-        int line_no = 1;
-
-        while (fgets(line, sizeof(line), input)) {
-            removeSubstr(filename, line_no++, line, word, 0);
-        }
-
-        fclose(input);
-     }
-
-     (void) closedir (dp);
-   }
-   else
-     perror ("Couldn't open the directory");
-
-   return 0;
+	if ((rc = ptree(argv + 1, word)) != 0)
+		rc = 1;
+	return rc;
 }
 
-/*int main(int argc, char *argv[]) {*/
+static int ptree(char * const argv[], char * word)
+{
+	int rc;
+	FTS *ftsp;
+	FTSENT *p, *chp;
+	int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
+	int rval = 0;
 
-    /*char *word = argv[1];*/
-    /*FILE *input = fopen(argv[2], "r");*/
-    /*char *filename = argv[2];*/
+	if ((ftsp = fts_open(argv, fts_options, NULL)) == NULL) {
+		warn("fts_open");
+		return -1;
+	}
+	/* Initialize ftsp with as many argv[] parts as possible. */
+	chp = fts_children(ftsp, 0);
+	if (chp == NULL) {
+		return 0;               /* no files to traverse */
+	}
+	while ((p = fts_read(ftsp)) != NULL) {
+		switch (p->fts_info) {
+			case FTS_D:
+				/*printf("d %s\n", p->fts_path);*/
+				while((rc = ptree(argv + 1, word)) != 0)
+					rc = 1;
+				break;
+			case FTS_F:
+				/*printf("f %s\n", p->fts_path);*/
+				printf(".");
 
-    /*if (!input) {*/
-        /*printf("Such input file does not exist.\n");*/
-        /*return 1;*/
-    /*}*/
+				char *filename = p->fts_path;
+				FILE *input = fopen(filename, "r");
 
-    /*char line[MAX_LINE_SIZE];*/
+				char line[MAX_LINE_SIZE];
 
-    /*int line_no = 1;*/
+				int line_no = 1;
 
-    /*while (fgets(line, sizeof(line), input)) {*/
-        /*removeSubstr(filename, line_no++, line, word, 0);*/
-    /*}*/
+				while (fgets(line, sizeof(line), input)) {
+					removeSubstr(filename, line_no++, line, word, 0);
+				}
 
-    /*fclose(input);*/
-
-    /*return 0;*/
-
-/*}*/
+				fclose(input);
+			
 
 
+				break;
+			default:
+				break;
+		}
+	}
+	fts_close(ftsp);
+	return 0;
+}
