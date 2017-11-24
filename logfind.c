@@ -1,34 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-
-#include <stdarg.h>
-#include "dbg.h"
-
-#include <ctype.h>
-
-#include <sys/types.h>
-
-#include <sys/stat.h>
-
-#include <err.h>
-#include <fts.h>
-#include <stdio.h>
-
-#include <string.h>
-
 /*=============================================================================
   |
-  |  Assignment:
-  |  Task number:
-  |
-  |       Author:  Tomas Giedraitis
-  |  Study group:  VU MIF INFO, 1st group
-  |     Contacts:  tomasgiedraitis@gmail.com
-  |        Class:
-  |         Date:  2017
-  |
-  |     Language:  GNU C (using gcc on Lenovo Y50-70, OS: Arch Linux x86_64)
-  |     Version:   0.0
+  |     Language:  GNU C 
   |   To Compile:  gcc -Wall -xc -g -lm -std=c99 logfind.c -o logfind
   |
   +-----------------------------------------------------------------------------
@@ -44,30 +16,93 @@
   |
   |      Output:
   |
-  |
-  |
-  | Version
-  | updates:     Currently this is the intial version
-  |
   +===========================================================================*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <err.h>
+#include <fts.h>
+#include <string.h>
+#include <dirent.h>
+
+#include "dbg.h"
 
 
 #define MAX_LINE_SIZE 255
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <dirent.h>
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
+
 // Description
 //
 //::params:
 //::params:
-void logfind(char *filename, FILE *input, char *word);
+static int ptree(char *const argv[], char * word);
+
+
+/// Description
+//
+//::params:
+//::params:
+void removeSubstr (char *filename, int line, char *string, char *sub, int level);
+
+
+int main(int argc, char *const argv[])
+{
+    char *word = argv[1];
+
+    int rc;
+
+    if ((rc = ptree(argv + 2, word)) != 0)
+        rc = 1;
+    return rc;
+}
+
+
+static int ptree(char *const argv[], char * word)
+{
+
+    int rc;
+    FTS *ftsp;
+    FTSENT *p, *chp;
+    int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
+    int rval = 0;
+
+    if ((ftsp = fts_open(argv, fts_options, NULL)) == NULL) {
+        warn("fts_open");
+        return -1;
+    }
+    /* Initialize ftsp with as many argv[] parts as possible. */
+    chp = fts_children(ftsp, 0);
+    if (chp == NULL) {
+        return 0;               /* no files to traverse */
+    }
+    while ((p = fts_read(ftsp)) != NULL) {
+
+        char *filename = p->fts_path;
+        FILE *input = fopen(filename, "r");
+
+        char line[MAX_LINE_SIZE];
+
+        int line_no = 1;
+
+        while (fgets(line, sizeof(line), input)) {
+            removeSubstr(filename, line_no++, line, word, 0);
+        }
+
+        fclose(input);
+    }
+
+    fts_close(ftsp);
+    return 0;
+}
 
 
 void removeSubstr (char *filename, int line, char *string, char *sub, int level) {
@@ -111,57 +146,4 @@ void removeSubstr (char *filename, int line, char *string, char *sub, int level)
         return;
     }
 
-}
-
-
-static int ptree(char *const argv[], char * word);
-
-
-int main(int argc, char *const argv[])
-{
-    char *word = argv[1];
-
-    int rc;
-
-    if ((rc = ptree(argv + 2, word)) != 0)
-        rc = 1;
-    return rc;
-}
-
-static int ptree(char *const argv[], char * word)
-{
-
-    int rc;
-    FTS *ftsp;
-    FTSENT *p, *chp;
-    int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
-    int rval = 0;
-
-    if ((ftsp = fts_open(argv, fts_options, NULL)) == NULL) {
-        warn("fts_open");
-        return -1;
-    }
-    /* Initialize ftsp with as many argv[] parts as possible. */
-    chp = fts_children(ftsp, 0);
-    if (chp == NULL) {
-        return 0;               /* no files to traverse */
-    }
-    while ((p = fts_read(ftsp)) != NULL) {
-
-        char *filename = p->fts_path;
-        FILE *input = fopen(filename, "r");
-
-        char line[MAX_LINE_SIZE];
-
-        int line_no = 1;
-
-        while (fgets(line, sizeof(line), input)) {
-            removeSubstr(filename, line_no++, line, word, 0);
-        }
-
-        fclose(input);
-    }
-
-    fts_close(ftsp);
-    return 0;
 }
