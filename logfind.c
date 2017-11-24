@@ -17,39 +17,39 @@
 #include <string.h>
 
 /*=============================================================================
- |
- |  Assignment:  
- |  Task number:  
- |
- |       Author:  Tomas Giedraitis
- |  Study group:  VU MIF INFO, 1st group
- |     Contacts:  tomasgiedraitis@gmail.com
- |        Class:  
- |         Date:  2017
- |
- |     Language:  GNU C (using gcc on Lenovo Y50-70, OS: Arch Linux x86_64)
- |     Version:   0.0
- |   To Compile:  gcc -Wall -xc -g -lm -std=c99 logfind.c -o logfind
- |
- +-----------------------------------------------------------------------------
- |
- |  Description:  
- |               
- |
- |  Constraints:  
- |                
- |
- |	    Input:    
- |               
- |
- |	    Output:   
- |                
- |                
- |
- | Version
- | updates:     Currently this is the intial version
- |
- +===========================================================================*/
+  |
+  |  Assignment:
+  |  Task number:
+  |
+  |       Author:  Tomas Giedraitis
+  |  Study group:  VU MIF INFO, 1st group
+  |     Contacts:  tomasgiedraitis@gmail.com
+  |        Class:
+  |         Date:  2017
+  |
+  |     Language:  GNU C (using gcc on Lenovo Y50-70, OS: Arch Linux x86_64)
+  |     Version:   0.0
+  |   To Compile:  gcc -Wall -xc -g -lm -std=c99 logfind.c -o logfind
+  |
+  +-----------------------------------------------------------------------------
+  |
+  |  Description:
+  |
+  |
+  |  Constraints:
+  |
+  |
+  |      Input:
+  |
+  |
+  |      Output:
+  |
+  |
+  |
+  | Version
+  | updates:     Currently this is the intial version
+  |
+  +===========================================================================*/
 
 
 #define MAX_LINE_SIZE 255
@@ -65,51 +65,51 @@
 
 // Description
 //
-//::params: 
-//::params: 
+//::params:
+//::params:
 void logfind(char *filename, FILE *input, char *word);
 
 
 void removeSubstr (char *filename, int line, char *string, char *sub, int level) {
-	char *match;
-	int len_sub = strlen(sub);
-	int len_string = strlen(string);
+    char *match;
+    int len_sub = strlen(sub);
+    int len_string = strlen(string);
 
 
-	match = strstr(string, sub);
-	if (match && level == 0) {
+    match = strstr(string, sub);
+    if (match && level == 0) {
 
-			printf(ANSI_COLOR_CYAN    "%s"    ANSI_COLOR_RESET, filename);
-			printf(ANSI_COLOR_GREEN ":%d:" ANSI_COLOR_RESET, line);
-		}
-	if (!match) {
-		if (level == 0) {
-			return;
-		} else {
-			printf(string);
-			return;
-		}
-	}
+        printf(ANSI_COLOR_CYAN    "%s"    ANSI_COLOR_RESET, filename);
+        printf(ANSI_COLOR_GREEN ":%d:" ANSI_COLOR_RESET, line);
+    }
+    if (!match) {
+        if (level == 0) {
+            return;
+        } else {
+            printf(string);
+            return;
+        }
+    }
 
-	int len_match = strlen(match); 
-	int match_start = len_string - len_match;
+    int len_match = strlen(match);
+    int match_start = len_string - len_match;
 
-	for (int i = 0; i < match_start; i++) {
-		printf("%c", string[i]);
-	}
+    for (int i = 0; i < match_start; i++) {
+        printf("%c", string[i]);
+    }
 
-	printf(ANSI_COLOR_RED     "%s"     ANSI_COLOR_RESET, sub);
+    printf(ANSI_COLOR_RED     "%s"     ANSI_COLOR_RESET, sub);
 
-	int new_start = len_string - len_match + len_sub;
+    int new_start = len_string - len_match + len_sub;
 
-	// -1 for removing the newline char
-	if (new_start != len_string -1 ) {
-		char *new_string = string + new_start;
-		removeSubstr(filename, line, new_string, sub, ++level);
-	} else {
-		printf("\n");
-		return;
-	}
+    // -1 for removing the newline char
+    if (new_start != len_string -1 ) {
+        char *new_string = string + new_start;
+        removeSubstr(filename, line, new_string, sub, ++level);
+    } else {
+        printf("\n");
+        return;
+    }
 
 }
 
@@ -121,32 +121,32 @@ int main(int argc, char *const argv[])
 {
     char *word = argv[1];
 
-	int rc;
+    int rc;
 
-	if ((rc = ptree(argv + 2, word)) != 0)
-		rc = 1;
-	return rc;
+    if ((rc = ptree(argv + 2, word)) != 0)
+        rc = 1;
+    return rc;
 }
 
 static int ptree(char *const argv[], char * word)
 {
 
-	int rc;
-	FTS *ftsp;
-	FTSENT *p, *chp;
-	int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
-	int rval = 0;
+    int rc;
+    FTS *ftsp;
+    FTSENT *p, *chp;
+    int fts_options = FTS_COMFOLLOW | FTS_LOGICAL | FTS_NOCHDIR;
+    int rval = 0;
 
-	if ((ftsp = fts_open(argv, fts_options, NULL)) == NULL) {
-		warn("fts_open");
-		return -1;
-	}
-	/* Initialize ftsp with as many argv[] parts as possible. */
-	chp = fts_children(ftsp, 0);
-	if (chp == NULL) {
-		return 0;               /* no files to traverse */
-	}
-	while ((p = fts_read(ftsp)) != NULL) {
+    if ((ftsp = fts_open(argv, fts_options, NULL)) == NULL) {
+        warn("fts_open");
+        return -1;
+    }
+    /* Initialize ftsp with as many argv[] parts as possible. */
+    chp = fts_children(ftsp, 0);
+    if (chp == NULL) {
+        return 0;               /* no files to traverse */
+    }
+    while ((p = fts_read(ftsp)) != NULL) {
 
         char *filename = p->fts_path;
         FILE *input = fopen(filename, "r");
@@ -160,8 +160,8 @@ static int ptree(char *const argv[], char * word)
         }
 
         fclose(input);
-	}
+    }
 
-	fts_close(ftsp);
-	return 0;
+    fts_close(ftsp);
+    return 0;
 }
