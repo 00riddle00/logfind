@@ -114,22 +114,23 @@ void removeSubstr (char *filename, int line, char *string, char *sub, int level)
 }
 
 
-static int ptree(char * const argv[], char * word);
+static int ptree(char *const argv[], char * word);
 
 
-int main(int argc, char * const argv[])
+int main(int argc, char *const argv[])
 {
     char *word = argv[1];
 
 	int rc;
 
-	if ((rc = ptree(argv + 1, word)) != 0)
+	if ((rc = ptree(argv + 2, word)) != 0)
 		rc = 1;
 	return rc;
 }
 
-static int ptree(char * const argv[], char * word)
+static int ptree(char *const argv[], char * word)
 {
+
 	int rc;
 	FTS *ftsp;
 	FTSENT *p, *chp;
@@ -146,36 +147,21 @@ static int ptree(char * const argv[], char * word)
 		return 0;               /* no files to traverse */
 	}
 	while ((p = fts_read(ftsp)) != NULL) {
-		switch (p->fts_info) {
-			case FTS_D:
-				/*printf("d %s\n", p->fts_path);*/
-				while((rc = ptree(argv + 1, word)) != 0)
-					rc = 1;
-				break;
-			case FTS_F:
-				/*printf("f %s\n", p->fts_path);*/
-				printf(".");
 
-				char *filename = p->fts_path;
-				FILE *input = fopen(filename, "r");
+        char *filename = p->fts_path;
+        FILE *input = fopen(filename, "r");
 
-				char line[MAX_LINE_SIZE];
+        char line[MAX_LINE_SIZE];
 
-				int line_no = 1;
+        int line_no = 1;
 
-				while (fgets(line, sizeof(line), input)) {
-					removeSubstr(filename, line_no++, line, word, 0);
-				}
+        while (fgets(line, sizeof(line), input)) {
+            removeSubstr(filename, line_no++, line, word, 0);
+        }
 
-				fclose(input);
-			
-
-
-				break;
-			default:
-				break;
-		}
+        fclose(input);
 	}
+
 	fts_close(ftsp);
 	return 0;
 }
