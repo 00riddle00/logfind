@@ -32,7 +32,7 @@
 #include "dbg.h"
 
 
-#define MAX_LINE_SIZE 255
+#define MAX_LINE_SIZE 1024
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -56,6 +56,7 @@ void removeSubstr (char *filename, int line, char *string, char *sub, int level)
 
 int main(int argc, char *const argv[])
 {
+    /*check(argc > 2, "USAGE: logfind <string> <directory1> <directory2> <...>");*/
     char *word = argv[1];
 
     int rc;
@@ -64,6 +65,10 @@ int main(int argc, char *const argv[])
         rc = 1;
     return rc;
 }
+
+/*error:*/
+    /*return 1;*/
+/*}*/
 
 
 static int ptree(char *const argv[], char * word)
@@ -88,8 +93,11 @@ static int ptree(char *const argv[], char * word)
 
         char *filename = p->fts_path;
         FILE *input = fopen(filename, "r");
+        /*check(input, "Failed to open file: %s", filename);*/
 
+        /*char *line = calloc(MAX_LINE_SIZE, 1);*/
         char line[MAX_LINE_SIZE];
+        /*check_mem(line);*/
 
         int line_no = 1;
 
@@ -97,9 +105,16 @@ static int ptree(char *const argv[], char * word)
             removeSubstr(filename, line_no++, line, word, 0);
         }
 
+        /*free(line);*/
         fclose(input);
-    }
 
+/*error:*/
+    /*if(line) free(line);*/
+    /*if(input) fclose(input);*/
+    /*printf("Erorr occurred\n");*/
+    /*return -1;*/
+
+    }
     fts_close(ftsp);
     return 0;
 }
